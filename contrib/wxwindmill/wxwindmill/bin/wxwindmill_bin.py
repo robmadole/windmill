@@ -1,2 +1,0 @@
-import wxwindmill
-wxwindmill.main()
