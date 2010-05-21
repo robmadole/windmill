@@ -132,29 +132,20 @@ def install_plugins(settings, runner_class):
     binary = settings['MOZILLA_BINARY']
     profile = settings['MOZILLA_PROFILE']
     
-    def makedirs(name):
-        from errno import EEXIST
-        head, tail = os.path.split(name)
-        if not tail:
-            head, tail = os.path.split(head)
-        if head and tail and not os.path.exists(head):
-            try:
-                makedirs(head)
-            except OSError, e:
-                pass
-            if tail == os.curdir:           # xxx/newdir/. exists if xxx/newdir exists
-                return
-        try:
-            os.mkdir(name)
-        except:
-            pass
-    
     for plugin_path in settings['MOZILLA_PLUGINS']:
         if plugin_path.endswith('.xpi'):
             tmpdir = tempfile.mkdtemp(suffix=".mozrunner_plugins")
             compressed_file = zipfile.ZipFile(plugin_path, "r")
-            compressed_file.extractall(tmpdir)
+            for name in compressed_file.namelist():
+                pardir = os.path.join(tmpdir, os.path.dirname(name))
+                if not os.path.exists(pardir):
+                    os.makedirs(pardir)
 
-            install_plugin(tmpdir, profile) 
+                if not name.endswith('/'):
+                    data = compressed_file.read(name)
+                    f = open(os.path.join(tmpdir, name), 'w')
+                    f.write(data) ; f.close()
+                    
+            install_plugin(tmpdir, profile)
         else:
             install_plugin(plugin_path, profile)
